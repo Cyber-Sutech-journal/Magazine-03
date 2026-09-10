@@ -20,7 +20,13 @@ router = APIRouter(
 @router.post(
     "/movies",
     response_model=MovieResponse,
-    status_code=status.HTTP_201_CREATED
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a new movie",
+    description=(
+        "Adds a new movie to the catalog. Requires authentication, "
+        "and only users with the 'admin' role are allowed to perform "
+        "this action. Returns 403 if the current user is not an admin."
+    )
 )
 def create_movie(
     movie: MovieCreate,
@@ -44,7 +50,9 @@ def create_movie(
 
 @router.get(
     "/movies",
-    response_model=list[MovieResponse]
+    response_model=list[MovieResponse],
+    summary="List all movies",
+    description="Returns the full list of movies currently in the catalog. No authentication required."
 )
 def get_movies(
     db: Session = Depends(get_db)
@@ -56,7 +64,14 @@ def get_movies(
 @router.post(
     "/showtimes",
     response_model=ShowtimeResponse,
-    status_code=status.HTTP_201_CREATED
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a new showtime",
+    description=(
+        "Schedules a new showtime for an existing movie in an existing hall. "
+        "Requires authentication and the 'admin' role. "
+        "Returns 404 if the referenced movie or hall does not exist, "
+        "and 403 if the current user is not an admin."
+    )
 )
 def create_showtime(
     showtime: ShowtimeCreate,
@@ -97,7 +112,12 @@ def create_showtime(
 
 @router.get(
     "/movies/{movie_id}/showtimes",
-    response_model=list[ShowtimeResponse]
+    response_model=list[ShowtimeResponse],
+    summary="List showtimes for a movie",
+    description=(
+        "Returns all scheduled showtimes for a specific movie, "
+        "identified by its id. Returns 404 if the movie does not exist."
+    )
 )
 def get_movie_showtimes(
     movie_id: int,
