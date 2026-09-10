@@ -12,7 +12,17 @@ router = APIRouter(
 )
 
 
-@router.post("/register", status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register",
+    status_code=status.HTTP_201_CREATED,
+    summary="Register a new user",
+    description=(
+        "Creates a new user account with the given email and password. "
+        "The password is hashed before storage and never returned. "
+        "The new user is always created with the default 'user' role. "
+        "Returns 400 if the email is already registered."
+    )
+)
 def register(
     user_data: UserCreate,
     db: Session = Depends(get_db)
@@ -45,7 +55,16 @@ def register(
     }
 
 
-@router.post("/login")
+@router.post(
+    "/login",
+    summary="Log in and receive an access token",
+    description=(
+        "Authenticates a user with email and password. "
+        "On success, returns a JWT access token to be used in the "
+        "Authorization header (Bearer <token>) for protected endpoints. "
+        "Returns 401 if the email or password is incorrect."
+    )
+)
 def login(
     user_data: UserLogin,
     db: Session = Depends(get_db)
