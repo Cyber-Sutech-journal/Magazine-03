@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from scripts.annotate_ground_truth import (
@@ -11,16 +12,127 @@ from scripts.annotate_ground_truth import (
     KEY_LEFT_CODES,
     KEY_RIGHT_CODES,
     AnnotationEvent,
+    DisplayLine,
     annotation_wait_delay_ms,
+    calculate_in_arrow,
     calculate_timestamp,
+    clip_infinite_line_to_frame,
+    draw_overlay,
     normalize_key,
+    parse_args,
     resolve_annotation_fps,
     save_events_to_csv,
 )
 
 
+def _signed_side(point_a: tuple[int, int], point_b: tuple[int, int], point: tuple[int, int]) -> int:
+    ax, ay = point_a
+    bx, by = point_b
+    px, py = point
+    value = (bx - ax) * (py - ay) - (by - ay) * (px - ax)
+    return 1 if value > 0 else -1 if value < 0 else 0
+
+
 def test_calculate_timestamp() -> None:
     assert calculate_timestamp(frame_idx=125, fps=25.0) == 5.0
+
+
+def test_clip_infinite_horizontal_line_to_frame() -> None:
+    assert clip_infinite_line_to_frame((10, 20), (30, 20), 100, 50) == (
+        (0, 20),
+        (99, 20),
+    )
+
+
+def test_clip_cav_w2_diagonal_line_to_frame() -> None:
+    assert clip_infinite_line_to_frame((300, 287), (140, 55), 384, 288) == (
+        (300, 287),
+        (102, 0),
+    )
+
+
+def test_in_arrow_follows_a_to_b_signed_side_semantics() -> None:
+    point_a = (300, 287)
+    point_b = (140, 55)
+    start, end = calculate_in_arrow(point_a, point_b, "A_to_B")
+
+    assert _signed_side(point_a, point_b, start) == -1
+    assert _signed_side(point_a, point_b, end) == 1
+
+
+def test_in_arrow_reverses_for_b_to_a() -> None:
+    point_a = (300, 287)
+    point_b = (140, 55)
+    a_to_b_arrow = calculate_in_arrow(point_a, point_b, "A_to_B")
+    b_to_a_arrow = calculate_in_arrow(point_a, point_b, "B_to_A")
+
+    assert b_to_a_arrow == tuple(reversed(a_to_b_arrow))
+    assert _signed_side(point_a, point_b, b_to_a_arrow[0]) == 1
+    assert _signed_side(point_a, point_b, b_to_a_arrow[1]) == -1
+
+
+def test_parse_args_supports_old_invocation_without_display_line() -> None:
+    args = parse_args(["--video", "sample.mp4", "--output", "ground_truth.csv"])
+
+    assert args.display_line is None
+
+
+def test_parse_args_builds_complete_display_line() -> None:
+    args = parse_args(
+        [
+            "--video",
+            "sample.mp4",
+            "--output",
+            "ground_truth.csv",
+            "--display-line-a",
+            "300",
+            "287",
+            "--display-line-b",
+            "140",
+            "55",
+            "--display-positive-direction",
+            "A_to_B",
+            "--display-line-id",
+            "cav_w2_main",
+        ]
+    )
+
+    assert args.display_line == DisplayLine(
+        point_a=(300, 287),
+        point_b=(140, 55),
+        positive_direction="A_to_B",
+        line_id="cav_w2_main",
+    )
+
+
+def test_parse_args_rejects_incomplete_display_line() -> None:
+    with pytest.raises(SystemExit):
+        parse_args(
+            [
+                "--video",
+                "sample.mp4",
+                "--output",
+                "ground_truth.csv",
+                "--display-line-a",
+                "300",
+                "287",
+            ]
+        )
+
+
+def test_draw_overlay_adds_line_only_to_display_copy() -> None:
+    source = np.zeros((50, 100, 3), dtype=np.uint8)
+    display_line = DisplayLine(
+        point_a=(20, 40),
+        point_b=(70, 10),
+        positive_direction="A_to_B",
+        line_id="test_line",
+    )
+
+    displayed = draw_overlay(source, 0, 1, False, 0, display_line)
+
+    assert np.count_nonzero(source) == 0
+    assert np.count_nonzero(displayed) > 0
 
 
 def test_calculate_timestamp_with_invalid_fps() -> None:

@@ -63,6 +63,16 @@ class AnnotationEvent:
     video_name: str
 
 
+@dataclass(frozen=True)
+class DisplayLine:
+    """Display-only counting-line metadata for the annotation window."""
+
+    point_a: tuple[int, int]
+    point_b: tuple[int, int]
+    positive_direction: str
+    line_id: str
+
+
 def is_invalid_fps(fps: float) -> bool:
     """Return True when *fps* cannot be used for timestamps or wait delays.
 
@@ -133,7 +143,7 @@ def record_event(
     save_events_to_csv(events_list, out_path)
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     """Parse command-line arguments and document keyboard controls."""
     parser = argparse.ArgumentParser(
         description=(
@@ -155,7 +165,64 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         help="Path to the output Ground Truth CSV file.",
     )
-    return parser.parse_args()
+    parser.add_argument(
+        "--display-line-a",
+        nargs=2,
+        type=int,
+        metavar=("X", "Y"),
+        help="Display-only point A coordinates for the counting line.",
+    )
+    parser.add_argument(
+        "--display-line-b",
+        nargs=2,
+        type=int,
+        metavar=("X", "Y"),
+        help="Display-only point B coordinates for the counting line.",
+    )
+    parser.add_argument(
+        "--display-positive-direction",
+        choices=("A_to_B", "B_to_A"),
+        help="Display-only IN direction using the configured signed-side convention.",
+    )
+    parser.add_argument(
+        "--display-line-id",
+        help="Display-only counting-line identifier.",
+    )
+
+    args = parser.parse_args(argv)
+    display_values = (
+        args.display_line_a,
+        args.display_line_b,
+        args.display_positive_direction,
+        args.display_line_id,
+    )
+
+    if any(value is not None for value in display_values) and not all(
+        value is not None for value in display_values
+    ):
+        parser.error(
+            "display-line mode requires --display-line-a, --display-line-b, "
+            "--display-positive-direction, and --display-line-id"
+        )
+
+    args.display_line = None
+    if args.display_line_a is not None:
+        point_a = tuple(args.display_line_a)
+        point_b = tuple(args.display_line_b)
+
+        if point_a == point_b:
+            parser.error("display-line points A and B must be distinct")
+        if not args.display_line_id.strip():
+            parser.error("--display-line-id must not be empty")
+
+        args.display_line = DisplayLine(
+            point_a=point_a,
+            point_b=point_b,
+            positive_direction=args.display_positive_direction,
+            line_id=args.display_line_id,
+        )
+
+    return args
 
 
 def ask_crossing_details() -> tuple[str, str, str] | None:
@@ -179,12 +246,193 @@ def ask_crossing_details() -> tuple[str, str, str] | None:
     return class_name, direction, line_id
 
 
+def clip_infinite_line_to_frame(
+    point_a: tuple[int, int],
+    point_b: tuple[int, int],
+    frame_width: int,
+    frame_height: int,
+) -> tuple[tuple[int, int], tuple[int, int]] | None:
+    """Clip the infinite line through A and B to the visible frame rectangle."""
+    if frame_width <= 0 or frame_height <= 0:
+        raise ValueError("frame dimensions must be positive")
+
+    ax, ay = point_a
+    bx, by = point_b
+    dx = bx - ax
+    dy = by - ay
+
+    if dx == 0 and dy == 0:
+        raise ValueError("line points A and B must be distinct")
+
+    max_x = frame_width - 1
+    max_y = frame_height - 1
+    intersections: list[tuple[float, float, float]] = []
+
+    def add_intersection(t: float, x: float, y: float) -> None:
+        epsilon = 1e-9
+        if not (-epsilon <= x <= max_x + epsilon and -epsilon <= y <= max_y + epsilon):
+            return
+        if any(
+            abs(x - old_x) <= epsilon and abs(y - old_y) <= epsilon
+            for _, old_x, old_y in intersections
+        ):
+            return
+        intersections.append((t, min(max(x, 0.0), max_x), min(max(y, 0.0), max_y)))
+
+    if dx != 0:
+        for x in (0.0, float(max_x)):
+            t = (x - ax) / dx
+            add_intersection(t, x, ay + t * dy)
+
+    if dy != 0:
+        for y in (0.0, float(max_y)):
+            t = (y - ay) / dy
+            add_intersection(t, ax + t * dx, y)
+
+    if len(intersections) < 2:
+        return None
+
+    intersections.sort(key=lambda item: item[0])
+    _, start_x, start_y = intersections[0]
+    _, end_x, end_y = intersections[-1]
+    return (round(start_x), round(start_y)), (round(end_x), round(end_y))
+
+
+def calculate_in_arrow(
+    point_a: tuple[int, int],
+    point_b: tuple[int, int],
+    positive_direction: str,
+    arrow_length: float = 70.0,
+) -> tuple[tuple[int, int], tuple[int, int]]:
+    """Return an IN arrow crossing from the OUT side to the configured IN side."""
+    ax, ay = point_a
+    bx, by = point_b
+    dx = bx - ax
+    dy = by - ay
+    line_length = math.hypot(dx, dy)
+
+    if line_length == 0:
+        raise ValueError("line points A and B must be distinct")
+    if positive_direction not in {"A_to_B", "B_to_A"}:
+        raise ValueError("positive_direction must be A_to_B or B_to_A")
+
+    # (-dy, dx) points toward positive signed_distance for directed A→B.
+    normal_x = -dy / line_length
+    normal_y = dx / line_length
+    if positive_direction == "B_to_A":
+        normal_x = -normal_x
+        normal_y = -normal_y
+
+    center_x = (ax + bx) / 2
+    center_y = (ay + by) / 2
+    half_length = arrow_length / 2
+    start = (
+        round(center_x - normal_x * half_length),
+        round(center_y - normal_y * half_length),
+    )
+    end = (
+        round(center_x + normal_x * half_length),
+        round(center_y + normal_y * half_length),
+    )
+    return start, end
+
+
+def _draw_outlined_text(
+    frame,
+    text: str,
+    origin: tuple[int, int],
+    scale: float,
+    color: tuple[int, int, int],
+) -> None:
+    """Draw compact overlay text that remains readable on varied video content."""
+    cv2.putText(
+        frame,
+        text,
+        origin,
+        cv2.FONT_HERSHEY_SIMPLEX,
+        scale,
+        (0, 0, 0),
+        4,
+        cv2.LINE_AA,
+    )
+    cv2.putText(
+        frame,
+        text,
+        origin,
+        cv2.FONT_HERSHEY_SIMPLEX,
+        scale,
+        color,
+        2,
+        cv2.LINE_AA,
+    )
+
+
+def draw_display_line(frame, display_line: DisplayLine) -> None:
+    """Draw counting-line guidance in-place on an already copied display frame."""
+    frame_height, frame_width = frame.shape[:2]
+    visible_line = clip_infinite_line_to_frame(
+        display_line.point_a,
+        display_line.point_b,
+        frame_width,
+        frame_height,
+    )
+
+    if visible_line is not None:
+        cv2.line(frame, visible_line[0], visible_line[1], (0, 255, 255), 1, cv2.LINE_AA)
+
+    cv2.arrowedLine(
+        frame,
+        display_line.point_a,
+        display_line.point_b,
+        (255, 0, 255),
+        2,
+        cv2.LINE_AA,
+        tipLength=0.06,
+    )
+
+    ax, ay = display_line.point_a
+    bx, by = display_line.point_b
+    _draw_outlined_text(frame, "A", (ax + 6, max(18, ay - 8)), 0.65, (255, 0, 255))
+    _draw_outlined_text(frame, "B", (bx + 6, min(frame_height - 8, by + 22)), 0.65, (255, 0, 255))
+
+    _draw_outlined_text(
+        frame,
+        f"Line: {display_line.line_id}",
+        (10, frame_height - 12),
+        0.55,
+        (0, 255, 255),
+    )
+
+    arrow_start, arrow_end = calculate_in_arrow(
+        display_line.point_a,
+        display_line.point_b,
+        display_line.positive_direction,
+    )
+    cv2.arrowedLine(
+        frame,
+        arrow_start,
+        arrow_end,
+        (255, 255, 0),
+        2,
+        cv2.LINE_AA,
+        tipLength=0.25,
+    )
+    _draw_outlined_text(
+        frame,
+        "IN",
+        (arrow_end[0] + 6, max(18, arrow_end[1] - 6)),
+        0.65,
+        (255, 255, 0),
+    )
+
+
 def draw_overlay(
     frame,
     frame_idx: int,
     total_frames: int,
     playing: bool,
     event_count: int,
+    display_line: DisplayLine | None = None,
 ):
     """Draw current playback state on the displayed frame."""
     status = "PLAYING" if playing else "PAUSED"
@@ -209,12 +457,16 @@ def draw_overlay(
             cv2.LINE_AA,
         )
 
+    if display_line is not None:
+        draw_display_line(result, display_line)
+
     return result
 
 
 def run_annotation(
     video_path: Path,
     output_path: Path,
+    display_line: DisplayLine | None = None,
 ) -> None:
     """Run the interactive OpenCV annotation loop."""
     capture = cv2.VideoCapture(str(video_path))
@@ -259,6 +511,7 @@ def run_annotation(
                 total_frames=total_frames,
                 playing=playing,
                 event_count=len(events),
+                display_line=display_line,
             )
             cv2.imshow(window_name, displayed)
 
@@ -347,6 +600,7 @@ def main() -> None:
     run_annotation(
         video_path=args.video,
         output_path=args.output,
+        display_line=args.display_line,
     )
 
 

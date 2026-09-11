@@ -28,10 +28,13 @@ outputs/
 ~/.cache/ultralytics/
 .cache/
 
-# Data: keep the CI sample clip in git; ignore other (large) clips
+# Data: keep the CI sample clip and lightweight manual evaluation GT in git;
+# ignore other data/video files.
 data/*
 !data/.gitkeep
 !data/ci_sample_clip.mp4
+!data/ground_truth/
+!data/ground_truth/*.csv
 
 # IDE / editor
 .idea/
