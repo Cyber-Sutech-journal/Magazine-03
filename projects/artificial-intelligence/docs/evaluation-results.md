@@ -438,62 +438,38 @@ configs/eval_mnd_61_79.yaml
 
 ### 10.3 Final production prediction artifacts
 
+The per-clip prediction event CSVs are local runtime artifacts and are not committed to the
+repository (`outputs/` is listed in `.gitignore`). They are produced by running
+`scripts/run_production.py` with the evaluation configs listed in §10.2, as described in the
+result-reproduction steps in `README.md §7`.
+
+Each clip produces one events CSV under `outputs/final_<clip>/`:
+
 ```text
-outputs/final_escalator/escalator_0_9s/escalator_0_9s_events.csv
-outputs/final_mnd_back/BackVehcilesTraffic720p_14_28s/BackVehcilesTraffic720p_14_28s_events.csv
-outputs/final_twoway/TwoWayTraffic720p_shift05s/TwoWayTraffic720p_shift05s_events.csv
-outputs/final_virat/VIRAT_S_010204_05_000856_000890_trim4s/VIRAT_S_010204_05_000856_000890_trim4s_events.csv
-outputs/final_mnd_61_79/BackVehcilesTraffic720p_61_79s/BackVehcilesTraffic720p_61_79s_events.csv
+<clip_stem>_events.csv
 ```
 
 ### 10.4 Production manifests
 
-```text
-outputs/final_escalator/production_manifest_20260906T184201Z.json
-outputs/final_mnd_back/production_manifest_20260906T173815Z.json
-outputs/final_twoway/production_manifest_20260906T202334Z.json
-outputs/final_virat/production_manifest_20260906T193421Z.json
-outputs/final_mnd_61_79/production_manifest_20260907T150905Z.json
-```
+Per-clip production manifests (`production_manifest_<UTC>.json`) are also local runtime artifacts
+under `outputs/` and are not committed to the repository. They are generated automatically by
+`scripts/run_production.py` alongside the prediction event CSVs.
 
 ### 10.5 Evaluation outputs
 
-Primary evaluation:
+The `evaluation_summary.csv` and `evaluation_matches.csv` files for each clip are local runtime
+artifacts under `outputs/` and are not committed to the repository. They are produced by running
+`scripts/evaluate.py` with the frozen `--tolerance-seconds 0.5` against the ground truth files in
+§10.1, as described in `README.md §7`.
 
-```text
-outputs/evaluation/escalator/
-outputs/evaluation/mnd_back/
-outputs/evaluation/twoway/
-outputs/evaluation/virat/
-outputs/evaluation/mnd_61_79/
-```
-
-Each directory contains:
-
-```text
-evaluation_summary.csv
-evaluation_matches.csv
-```
-
-Evaluation reproducibility check:
-
-```text
-outputs/evaluation_rerun/escalator/
-outputs/evaluation_rerun/mnd_back/
-outputs/evaluation_rerun/twoway/
-outputs/evaluation_rerun/virat/
-outputs/evaluation_rerun/mnd_61_79/
-```
+The evaluation reproducibility check repeated this scoring for all five clips and confirmed that
+both generated CSV files were identical to the primary evaluation outputs.
 
 ### 10.6 Validation evidence
 
-Representative event and failure-review frames are stored under:
-
-```text
-outputs/t22_validation/
-```
-
-This directory contains representative true-positive checks and frame sequences used to verify the three false-negative events.
+Representative true-positive checks and the frame sequences used to verify the three false-negative
+events were recorded during manual review of the annotated production videos. These frame-level
+inspection records are local artifacts and are not committed to the repository.
 
 ### 10.7 Counting-line geometry
 
