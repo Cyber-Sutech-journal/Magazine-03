@@ -1,0 +1,9 @@
+frame_idx,timestamp_seconds,class_name,direction,line_id,video_name
+10,0.416667,person,IN,escalator_main,escalator_0_9s.mp4
+23,0.958333,person,IN,escalator_main,escalator_0_9s.mp4
+54,2.25,person,IN,escalator_main,escalator_0_9s.mp4
+87,3.625,person,IN,escalator_main,escalator_0_9s.mp4
+131,5.458333,person,IN,escalator_main,escalator_0_9s.mp4
+154,6.416667,person,IN,escalator_main,escalator_0_9s.mp4
+207,8.625,person,IN,escalator_main,escalator_0_9s.mp4
+211,8.791667,person,IN,escalator_main,escalator_0_9s.mp4

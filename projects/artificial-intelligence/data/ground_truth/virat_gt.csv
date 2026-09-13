@@ -1,0 +1,6 @@
+frame_idx,timestamp_seconds,class_name,direction,line_id,video_name
+109,4.547351,person,OUT,virat_main,VIRAT_S_010204_05_000856_000890_trim4s.mp4
+128,5.340008,person,OUT,virat_main,VIRAT_S_010204_05_000856_000890_trim4s.mp4
+144,6.007509,person,OUT,virat_main,VIRAT_S_010204_05_000856_000890_trim4s.mp4
+322,13.433458,person,IN,virat_main,VIRAT_S_010204_05_000856_000890_trim4s.mp4
+333,13.892365,person,IN,virat_main,VIRAT_S_010204_05_000856_000890_trim4s.mp4

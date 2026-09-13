@@ -1,0 +1,13 @@
+frame_idx,timestamp_seconds,class_name,direction,line_id,video_name
+82,3.28,car,IN,mnd_back_main,BackVehcilesTraffic720p_14_28s.avi
+106,4.24,car,IN,mnd_back_main,BackVehcilesTraffic720p_14_28s.avi
+138,5.52,car,IN,mnd_back_main,BackVehcilesTraffic720p_14_28s.avi
+169,6.76,car,OUT,mnd_back_main,BackVehcilesTraffic720p_14_28s.avi
+225,9.0,car,IN,mnd_back_main,BackVehcilesTraffic720p_14_28s.avi
+234,9.36,car,OUT,mnd_back_main,BackVehcilesTraffic720p_14_28s.avi
+245,9.8,car,IN,mnd_back_main,BackVehcilesTraffic720p_14_28s.avi
+246,9.84,car,IN,mnd_back_main,BackVehcilesTraffic720p_14_28s.avi
+270,10.8,car,OUT,mnd_back_main,BackVehcilesTraffic720p_14_28s.avi
+289,11.56,car,IN,mnd_back_main,BackVehcilesTraffic720p_14_28s.avi
+319,12.76,car,OUT,mnd_back_main,BackVehcilesTraffic720p_14_28s.avi
+330,13.2,car,IN,mnd_back_main,BackVehcilesTraffic720p_14_28s.avi

@@ -1,0 +1,40 @@
+video:
+  path: "OVERRIDDEN_BY_RUN_PRODUCTION_SCRIPT"
+  output_dir: "OVERRIDDEN_BY_RUN_PRODUCTION_SCRIPT"
+
+detection:
+  model_variant: "yolo26m"
+  imgsz: 960
+  confidence_threshold: 0.35
+  classes: ["person", "car"]
+
+tracker:
+  type: "bytetrack"
+  track_thresh: 0.5
+  match_thresh: 0.8
+  track_buffer: 30
+
+lines:
+  - line_id: "twoway_main"
+    point_a: [0, 430]
+    point_b: [1279, 430]
+    positive_direction: "A_to_B"
+
+crossing_logic:
+  reference_point: "bottom_center"
+  history_length: 8
+  confirmation_majority_threshold: 0.7
+  cooldown_seconds: 1.5
+  stale_track_timeout_seconds: 2.0
+  min_displacement_px: null
+  min_velocity_px_per_s: null
+
+events:
+  output_csv: "OVERRIDDEN_BY_RUN_PRODUCTION_SCRIPT"
+
+evaluation:
+  matching_tolerance_seconds: 0.5
+
+visualization:
+  output_video: "OVERRIDDEN_BY_RUN_PRODUCTION_SCRIPT"
+  draw_trails: false

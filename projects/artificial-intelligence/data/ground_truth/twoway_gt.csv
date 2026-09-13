@@ -1,0 +1,16 @@
+frame_idx,timestamp_seconds,class_name,direction,line_id,video_name
+15,0.6,car,OUT,twoway_main,TwoWayTraffic720p_shift05s.mp4
+70,2.8,car,OUT,twoway_main,TwoWayTraffic720p_shift05s.mp4
+111,4.44,car,OUT,twoway_main,TwoWayTraffic720p_shift05s.mp4
+164,6.56,car,OUT,twoway_main,TwoWayTraffic720p_shift05s.mp4
+208,8.32,car,OUT,twoway_main,TwoWayTraffic720p_shift05s.mp4
+251,10.04,car,IN,twoway_main,TwoWayTraffic720p_shift05s.mp4
+277,11.08,car,OUT,twoway_main,TwoWayTraffic720p_shift05s.mp4
+303,12.12,car,OUT,twoway_main,TwoWayTraffic720p_shift05s.mp4
+320,12.8,car,IN,twoway_main,TwoWayTraffic720p_shift05s.mp4
+341,13.64,car,IN,twoway_main,TwoWayTraffic720p_shift05s.mp4
+366,14.64,car,OUT,twoway_main,TwoWayTraffic720p_shift05s.mp4
+378,15.12,car,IN,twoway_main,TwoWayTraffic720p_shift05s.mp4
+393,15.72,car,IN,twoway_main,TwoWayTraffic720p_shift05s.mp4
+421,16.84,car,OUT,twoway_main,TwoWayTraffic720p_shift05s.mp4
+453,18.12,car,OUT,twoway_main,TwoWayTraffic720p_shift05s.mp4
