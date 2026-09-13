@@ -418,6 +418,8 @@ The frozen configuration, Ground Truth, event-matching outputs, manual validatio
 
 ### 10.1 Final Ground Truth files
 
+The manually reviewed Ground Truth files for the five final evaluation clips are versioned in the repository:
+
 ```text
 data/ground_truth/escalator_gt.csv
 data/ground_truth/mnd_back_gt.csv
@@ -428,6 +430,8 @@ data/ground_truth/mnd_61_79_gt.csv
 
 ### 10.2 Final evaluation configs
 
+The frozen evaluation configurations are versioned in the repository:
+
 ```text
 configs/eval_escalator.yaml
 configs/eval_mnd_back.yaml
@@ -436,40 +440,75 @@ configs/eval_virat.yaml
 configs/eval_mnd_61_79.yaml
 ```
 
-### 10.3 Final production prediction artifacts
+These configs preserve the final production detector, tracker, crossing-logic, counting-line, and evaluation settings used for the reported five-clip evaluation.
 
-The per-clip prediction event CSVs are local runtime artifacts and are not committed to the
-repository (`outputs/` is listed in `.gitignore`). They are produced by running
-`scripts/run_production.py` with the evaluation configs listed in §10.2, as described in the
-result-reproduction steps in `README.md §7`.
+### 10.3 Ground Truth annotation tooling
 
-Each clip produces one events CSV under `outputs/final_<clip>/`:
+The Ground Truth annotation workflow used for the final evaluation is represented by:
 
 ```text
-<clip_stem>_events.csv
+scripts/annotate_ground_truth.py
+tests/test_annotate_ground_truth.py
 ```
 
-### 10.4 Production manifests
+The annotation tool supports frame-level manual crossing annotation, accepts both `IN` and `OUT` direction labels, and visually displays the configured counting line together with the configured `IN` direction as annotation guidance.
 
-Per-clip production manifests (`production_manifest_<UTC>.json`) are also local runtime artifacts
-under `outputs/` and are not committed to the repository. They are generated automatically by
-`scripts/run_production.py` alongside the prediction event CSVs.
+The corresponding tests cover annotation utilities, display-line geometry and direction semantics, CLI argument validation, and overlay behavior.
 
-### 10.5 Evaluation outputs
+### 10.4 Runtime-generated evaluation artifacts
 
-The `evaluation_summary.csv` and `evaluation_matches.csv` files for each clip are local runtime
-artifacts under `outputs/` and are not committed to the repository. They are produced by running
-`scripts/evaluate.py` with the frozen `--tolerance-seconds 0.5` against the ground truth files in
-§10.1, as described in `README.md §7`.
+For the documented final evaluation runs, generated production and evaluation artifacts are local runtime outputs under `outputs/` and are intentionally not committed to the repository (`outputs/` is listed in `.gitignore`).
 
-The evaluation reproducibility check repeated this scoring for all five clips and confirmed that
-both generated CSV files were identical to the primary evaluation outputs.
+`scripts/run_production.py` creates a separate subdirectory for each clip under the selected output root. For each processed clip, it writes:
 
-### 10.6 Validation evidence
+```text
+<output-root>/<clip_stem>/<clip_stem>_events.csv
+<output-root>/<clip_stem>/<clip_stem>_annotated.mp4
+```
 
-Representative true-positive checks and the frame sequences used to verify the three false-negative
-events were recorded during manual review of the annotated production videos. These frame-level
-inspection records are local artifacts and are not committed to the repository.
+It also writes one production manifest for the run at:
+
+```text
+<output-root>/production_manifest_<UTC>.json
+```
+
+The runner prints the final counter for each `(class, line, direction)` group and records per-clip counters and runtime metadata in the manifest.
+
+The corresponding evaluation outputs:
+
+```text
+<evaluation-output-dir>/evaluation_summary.csv
+<evaluation-output-dir>/evaluation_matches.csv
+```
+
+are produced by running `scripts/evaluate.py` with the frozen `--tolerance-seconds 0.5` against the Ground Truth files listed in §10.1, as described in the result-reproduction steps in `README.md §7`.
+
+The evaluation reproducibility check repeated this scoring for all five clips and confirmed that both generated CSV files were identical to the primary evaluation outputs.
+
+### 10.5 Demo assets
+
+Two curated annotated-video excerpts are versioned as project documentation assets:
+
+```text
+docs/assets/demos/escalator_demo.gif
+docs/assets/demos/twoway_demo.gif
+```
+
+These GIFs are presentation assets derived from the evaluated scenarios; the corresponding source videos and complete generated production outputs are not committed to the repository.
+
+### 10.6 Curated validation assets
+
+A small set of manually selected validation images is versioned for documentation:
+
+```text
+docs/assets/evaluation/escalator_tp_example.jpg
+docs/assets/evaluation/mnd_back_tp_example.jpg
+docs/assets/evaluation/mnd_61_79_failure_example.jpg
+```
+
+These images provide representative visual evidence from the manual validation and Failure Analysis process.
+
+The complete raw validation material is not part of the version-controlled repository. Generated production and evaluation outputs remain local under ignored `outputs/` directories.
 
 ### 10.7 Counting-line geometry
 
