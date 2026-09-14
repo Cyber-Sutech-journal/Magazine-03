@@ -8,3 +8,5 @@ This repository contains the third issue of Cyber Sutech magazine and its relate
 - [Artificial Intelligence](./projects/artificial-intelligence/)
 - [Hardware](./projects/hardware/)
 - [Network](./projects/network/)
+- [Career](./projects/career/)
+- [Entertainment](./projects/Entertainment/)
